@@ -2,6 +2,22 @@ import pandas as pd
 
 
 def preparation_dataset_6k_Classification() :
+    """
+    Fonction qui prépare les données pour le dataset de 6k lignes pour la classification.
+    
+    Variable d'entré : Aucune
+
+    Fonctionnement : 
+    - Load du csv
+    - Nettoyage du nom des colonnes pour une bonne comphréhension
+    - Mapping
+    - Drop des colonnes inutiles
+    - Remplacement des vides pour les colonnes restantes
+    - Encodage
+
+    Variable de sortie : Dataframe
+    """
+
     df = pd.read_csv("../data/diamonds_dataset.csv") 
 
     # Nettoyage des noms de colonnes
@@ -38,8 +54,25 @@ def preparation_dataset_6k_Classification() :
 
 
 def preparation_dataset_50k_Classification() : 
+    """
+    Fonction qui prépare les données pour le dataset de 50k lignes pour la classification.
+    
+    Variable d'entré : Aucune
+
+    Fonctionnement : 
+    - Load du csv
+    - Nettoyage du nom des colonnes pour une bonne comphréhension
+    - Mapping
+    - Feature Engineering
+
+    Variable de sortie : Dataframe
+    """
+
     df = pd.read_csv("../data/diamonds.csv")
     df = df.drop(df.columns[0], axis=1)
+
+    # Nettoyage des noms de colonnes
+    df.columns = df.columns.str.replace(' ', '_').str.replace('%', 'pct').str.replace('/', '_per_')
 
     # Mapping
     cut_map = {'Fair': 0, 'Good': 1, 'Very Good': 2, 'Premium': 3, 'Ideal': 4}
@@ -61,8 +94,24 @@ def preparation_dataset_50k_Classification() :
 
 
 def preparation_dataset_50k_Regression() :
+    """
+    Fonction qui prépare les données pour le dataset de 50k lignes pour la regression.
+    
+    Variable d'entré : Aucune
+
+    Fonctionnement : 
+    - Load du csv
+    - Nettoyage du nom des colonnes pour une bonne comphréhension
+    - Mapping
+
+    Variable de sortie : Dataframe
+    """
+
     df = pd.read_csv("../data/diamonds.csv")
     df = df.drop(df.columns[0], axis=1)
+
+    # Nettoyage des noms de colonnes
+    df.columns = df.columns.str.replace(' ', '_').str.replace('%', 'pct').str.replace('/', '_per_')
 
     # Mapping
     cut_map = {'Fair': 0,'Good': 1,'Very Good': 2,'Premium': 3,'Ideal': 4}
