@@ -1,0 +1,234 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tensorflow as tf
+
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import class_weight
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.utils import to_categorical
+
+
+#####################################################
+#              Préparation des données
+#####################################################
+
+def preparation_entrainement(df):
+    """
+    Fonction qui prépare les données pour l'entrainement par un train, test et
+    split puis par une standardisation et un to_numerical.
+
+    Paramètre d'entré : df --> dataframe
+    Paramètre de sortie : X_train, X_test, y_train, y_test, X_train_scaled,
+                          X_test_scaled, y_train_cat, y_test_cat
+    """
+    target = 'Type'
+    X = df.drop(columns=[target, "Price"])
+    y = df[target]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    y_train_cat = to_categorical(y_train, num_classes=3)
+    y_test_cat = to_categorical(y_test, num_classes=3)
+
+    return (X_train, X_test, y_train, y_test, X_train_scaled,
+            X_test_scaled, y_train_cat, y_test_cat)
+
+
+#####################################################
+#              Modèle Decision Tree
+#####################################################
+
+def model_decision_tree(X_train, y_train, X_test, y_test):
+    """
+    Modèle du decision tree
+
+    Paramètre d'entré : X_train, y_train, X_test, y_test
+    Paramètre de sortie : Aucun
+    Métriques : Accuracy
+
+    IMPORTANT : Ce modèle étant un decision tree il n'a pas besoin des
+    données standardisé
+    """
+    tree_classifier = DecisionTreeClassifier(random_state=42)
+    tree_classifier.fit(X_train, y_train)
+
+    y_pred_train = tree_classifier.predict(X_train)
+    y_pred_test = tree_classifier.predict(X_test)
+
+    accuracy_train = accuracy_score(y_train, y_pred_train)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+    print('===========================================================')
+    print('Modèle Decision Tree')
+    print('===========================================================')
+    print(f'Accuracy train : {accuracy_train:.2f}')
+    print(f'Accuracy test: {accuracy_test:.2f}')
+
+    return 0
+
+
+#####################################################
+#           Modèle Decision Tree avec Grid Search
+#####################################################
+
+def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
+    """
+    Modèle du decision tree optimisé avec Grid Search
+
+    Paramètre d'entré : X_train, y_train, X_test, y_test
+    Paramètre de sortie : Aucun
+    Métriques : Accuracy
+
+    IMPORTANT : Ce modèle étant un decision tree il n'a pas besoin des
+    données standardisé
+    """
+    param_grid = {
+        'criterion': ['gini', 'entropy'],
+        'max_depth': [None, 10, 15, 20, 30],
+        'min_samples_split': [2, 10, 50],
+        'min_samples_leaf': [1, 5, 10]
+    }
+
+    dt_base = DecisionTreeClassifier(random_state=42)
+
+    grid_search = GridSearchCV(
+        estimator=dt_base,
+        param_grid=param_grid,
+        cv=5,
+        n_jobs=-1,
+        verbose=1,
+        scoring='accuracy'
+    )
+
+    grid_search.fit(X_train, y_train)
+    best_tree = grid_search.best_estimator_
+    y_pred_best = best_tree.predict(X_test)
+    accuracy_best = accuracy_score(y_test, y_pred_best)
+
+    print('=================================================')
+    print('Modèle Decision Tree avec Grid Search')
+    print('=================================================')
+    print(f'Meilleurs paramètres : {grid_search.best_params_}')
+    print(f'Meilleur score de validation (cv) : {grid_search.best_score_:.4f}')
+    print(f'Accuracy Test (Optimisé) : {accuracy_best:.4f}')
+
+    return 0
+
+
+#####################################################
+#           Modèle TensorFlow
+#####################################################
+
+def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
+                     y_train_cat, y_test_cat):
+    """
+    Modèle Tensorflow
+    Paramètre d'entré' : y_train, y_test, X_train_scaled, X_test_scaled,
+                         y_train_cat, y_test_cat
+    Paramètre de sortie : Aucun
+
+    Fonctionnement
+    - Définition du modèle
+    - Entrainement
+    - Affichage des metrics
+    """
+
+    model = Sequential([
+        Dense(256, activation='relu', input_shape=(X_train_scaled.shape[1],)),
+        BatchNormalization(),
+        Dropout(0.3),
+
+        Dense(128, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.3),
+
+        Dense(64, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.3),
+
+        Dense(3, activation='softmax')
+    ])
+
+    model.compile(
+        optimizer=Adam(learning_rate=0.001),
+        loss='categorical_crossentropy',
+        metrics=['accuracy',
+                 tf.keras.metrics.Precision(name='precision'),
+                 tf.keras.metrics.Recall(name='recall')]
+    )
+
+    model.summary()
+
+    # Entrainement
+    classes_uniques = np.unique(y_train)
+    poids = class_weight.compute_class_weight(
+        class_weight='balanced',
+        classes=classes_uniques,
+        y=y_train
+    )
+    poids_dict = dict(zip(classes_uniques, poids))
+
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10,
+                                   restore_best_weights=True)
+    lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                     patience=3, min_lr=1e-6, verbose=1)
+
+    history = model.fit(
+        X_train_scaled,
+        y_train_cat,
+        epochs=50,
+        batch_size=64,
+        validation_data=(X_test_scaled, y_test_cat),
+        callbacks=[early_stopping, lr_scheduler],
+        class_weight=poids_dict,
+        verbose=2
+    )
+
+    # Affichage des metrics
+    loss, acc, prec, rec = model.evaluate(
+        X_test_scaled, y_test_cat, verbose=0
+    )
+    y_pred_probs = model.predict(X_test_scaled)
+    y_pred_classes = np.argmax(y_pred_probs, axis=1)
+    y_true_classes = y_test
+
+    print('=================================================')
+    print('Modèle TensorFlow')
+    print('=================================================')
+
+    print(f"Test Accuracy : {acc:.4f}")
+    print(f"Test Precision: {prec:.4f}")
+    print(f"Test Recall   : {rec:.4f}")
+
+    # Courbe d'apprentissage
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Val Loss')
+    plt.legend()
+    plt.title("Courbes d'apprentissage")
+    plt.show()
+
+    # Matrice de confusion
+    plt.figure(figsize=(10, 8))
+    cm = confusion_matrix(y_true_classes, y_pred_classes, normalize='true')
+    correct_labels = ['GIA Lab-Grown', 'GIA', 'IGI Lab-Grown']
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=correct_labels)
+    disp.plot(cmap='Blues', values_format='.2%')
+    plt.title("Matrice de Confusion Normalisée (Variable Cible: Type)")
+    plt.show()
+
+    return 0
