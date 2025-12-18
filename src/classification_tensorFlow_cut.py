@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+import os
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
@@ -233,3 +234,47 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
     plt.show()
 
     return 0
+
+
+#####################################################
+#           Sauvegarde et Chargement
+#####################################################
+
+def sauvegarder_modele_tf(model, nom_model):
+    """
+    Sauvegarde le modèle TensorFlow au format .keras
+    """
+    dossier = '../model'
+    if not os.path.exists(dossier):
+        os.makedirs(dossier)
+        
+    chemin_complet = os.path.join(dossier, f'{nom_model}.keras')
+    model.save(chemin_complet)
+    print(f' Modèle sauvegardé avec succès ici : {chemin_complet}')
+
+
+def charger_et_tester_modele_tf(nom_model, X_test_scaled, y_test_cat):
+    """
+    Charge un modèle sauvegardé et effectue une évaluation sur les données de test
+    """
+    chemin_complet = f'../model/{nom_model}.keras'
+    
+    if not os.path.exists(chemin_complet):
+        print(f" Erreur : Le fichier {chemin_complet} n'existe pas.")
+        return None
+
+    # Chargement du modèle
+    model = tf.keras.models.load_model(chemin_complet)
+    print(f" Modèle {nom_model} chargé avec succès.")
+
+    # Évaluation
+    loss, acc, prec, rec = model.evaluate(X_test_scaled, y_test_cat, verbose=0)
+    
+    print('=================================================')
+    print(f'Résultats du modèle chargé : {nom_model}')
+    print('=================================================')
+    print(f"Test Accuracy : {acc:.4f}")
+    print(f"Test Precision: {prec:.4f}")
+    print(f"Test Recall   : {rec:.4f}")
+    
+    return model
