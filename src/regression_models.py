@@ -146,7 +146,7 @@ def train_torch_regression(
         'scaler_y': scaler_y
     }
 
-    model_summary = summary(model, input_size=input_dimension, output_size=output_dimension)
+    model_summary = summary(model, input_size=(input_dimension,))
 
     return model, data_artifacts, model_summary
 
