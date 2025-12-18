@@ -7,3 +7,5 @@ tensorflow
 tensorflow-model-optimization
 pydot
 graphviz
+torchsummary
+torch
