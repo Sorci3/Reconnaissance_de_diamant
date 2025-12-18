@@ -10,7 +10,7 @@ import src.regression_models as rm
 def run_regression_training():
     df = dp.preparation_dataset_50k()
     
-    print(">> Entraînement PyTorch...")
+    print("|| Entraînement PyTorch ||")
     model_torch, artifacts_torch, _ = rm.train_torch_regression(
         df, num_epochs=50
     )
@@ -20,7 +20,7 @@ def run_regression_training():
         pickle.dump(artifacts_torch, f)
     print("Modèle PyTorch sauvegardé dans 'saved_models/'.")
 
-    print(">> Entraînement TensorFlow...")
+    print("|| Entraînement TensorFlow ||")
     model_tf, history, artifacts_tf = rm.train_tensorflow_regression(
         df, epochs=20
     )
@@ -31,12 +31,30 @@ def run_regression_training():
     print("Modèle TensorFlow sauvegardé dans 'saved_models/'.")
 
 
+def run_sklearn_baseline():
+    print("||  Entraînement Baseline (Linear Regression) || ")
+    df = dp.preparation_dataset_50k()
+    
+    # Entraînement
+    pipeline, X_test, y_test = rm.train_sklearn_pipeline(df)
+    
+    # Sauvegarde du modèle
+    path_model = "model/sklearn_pipeline.pkl"
+    with open(path_model, "wb") as f:
+        pickle.dump(pipeline, f)
+        
+    # Sauvegarde des données de test pour l'évaluation
+    path_data = "model/sklearn_test_data.pkl"
+    with open(path_data, "wb") as f:
+        pickle.dump((X_test, y_test), f)
+        
+    print(f"Baseline sauvegardée")
+
 if __name__ == "__main__":
 
     run_regression_training()
-
+    run_sklearn_baseline()
     # Classification cut
-    df = dp.preparation_dataset_50k()
     df = dp.preparation_dataset_50k()
     (X_train, X_test, y_train, y_test, 
      X_train_scaled, X_test_scaled, 

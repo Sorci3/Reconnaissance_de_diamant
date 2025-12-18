@@ -11,6 +11,12 @@ from tensorflow.keras.layers import Dense, BatchNormalization, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
+from sklearn.linear_model import LinearRegression
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
 color_map = {'J': 0, 'I': 1, 'H': 2, 'G': 3, 'F': 4, 'E': 5, 'D': 6}
 clarity_map = {'I1': 0, 'SI2': 1, 'SI1': 2, 'VS2': 3, 'VS1': 4, 'VVS2': 5, 'VVS1': 6, 'IF': 7}
 
@@ -238,7 +244,7 @@ def train_tensorflow_regression(
     X_np = X.values.astype(np.float32)
     y_np = y.values.astype(np.float32)
 
-
+    #
     X_train, X_test, y_train, y_test = train_test_split(
         X_np, y_np, test_size=0.2, random_state=42
     )
@@ -252,6 +258,7 @@ def train_tensorflow_regression(
     X_test = scaler_X.transform(X_test)
     y_test = scaler_y.transform(y_test)
 
+    #Définition de l'architecture du modèle
     model = Sequential([
         Dense(layer1, activation='relu', input_shape=(X_train.shape[1],)),
         BatchNormalization(),
@@ -274,12 +281,14 @@ def train_tensorflow_regression(
         metrics=["mae", "mse"]
     )
 
+    #Arrêt forcé lors de la convergence
     early_stopping = EarlyStopping(
         monitor="val_loss", 
         patience=10, 
         restore_best_weights=True
     )
 
+    #Ajustage du learning rate si le modèle ne s'améliore plus
     lr_scheduler = ReduceLROnPlateau(
         monitor='val_loss', 
         factor=0.5, 
@@ -287,7 +296,7 @@ def train_tensorflow_regression(
         min_lr=1e-6, 
         verbose=1
     )
-
+    #Entrainement du modèle 
     history = model.fit(
         X_train, y_train,
         epochs=epochs,
@@ -296,7 +305,8 @@ def train_tensorflow_regression(
         callbacks=[early_stopping, lr_scheduler],
         verbose=1
     )
-
+    
+    #Retours des artéfacts nécessaires à l'évaluation du modèle
     data_artifacts = {
         'X_train': X_train,
         'X_test': X_test,
@@ -307,3 +317,49 @@ def train_tensorflow_regression(
     }
 
     return model, history, data_artifacts
+
+
+def train_sklearn_pipeline(df):
+    """
+    Entraîne une baseline Scikit-Learn (LinearRegression).
+    """
+    #Colonnes à prédire
+    target_cols = ['price', 'carat']
+    # Toutes les colonnes sauf les cibles
+    feature_cols = [c for c in df.columns if c not in target_cols]
+    
+    X = df[feature_cols]
+    Y = df[target_cols]
+
+    #Séparation des données
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, Y, test_size=0.2, random_state=42
+    )
+
+    #On définit les colonnes non numériques
+    categorical_features = ['cut', 'color', 'clarity']
+    # Les autres sont numériques (depth, table, x, y, z...)
+    numerical_features = [c for c in feature_cols if c not in categorical_features]
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features),
+            ('num', StandardScaler(), numerical_features)
+        ],
+        remainder='passthrough'
+    )
+
+    #Création du modèle complet
+    base_regressor = LinearRegression()
+    multi_target_regressor = MultiOutputRegressor(base_regressor)
+
+    model_pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', multi_target_regressor)
+    ])
+
+    # Entraînement du modèle
+    model_pipeline.fit(X_train, y_train)
+
+    # On retourne le modèle ET les données de test pour pouvoir évaluer plus tard
+    return model_pipeline, X_test, y_test
