@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 
 def preparation_dataset_6k_Classification():
@@ -19,7 +20,9 @@ def preparation_dataset_6k_Classification():
     Variable de sortie : Dataframe
     """
 
-    df = pd.read_csv("../data/diamonds_dataset.csv")
+    # Déterminer le chemin relatif depuis src/ ou depuis la racine
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    df = pd.read_csv(os.path.join(base_dir, "data", "diamonds_dataset.csv"))
 
     # Nettoyage des noms de colonnes
     df.columns = (df.columns.str.replace(' ', '_')
@@ -80,7 +83,9 @@ def preparation_dataset_50k():
     Variable de sortie : Dataframe
     """
 
-    df = pd.read_csv("../data/diamonds.csv")
+    # Déterminer le chemin relatif depuis src/ ou depuis la racine
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    df = pd.read_csv(os.path.join(base_dir, "data", "diamonds.csv"))
     df = df.drop(df.columns[0], axis=1)
 
     # Nettoyage des noms de colonnes
@@ -103,8 +108,13 @@ def preparation_dataset_50k():
     df['cut'] = df['cut'].map(cut_map)
     df['color'] = df['color'].map(color_map)
     df['clarity'] = df['clarity'].map(clarity_map)
-
-    # Feature Engineering
+    
+    #On retire les erreurs d'entrées ou un diamant n'a pas de dimensions
+    df = df[(df[['x', 'y', 'z']] != 0).all(axis=1)]
+    #Suppression des potentiels doublons
+    df = df.drop_duplicates()
+    
+    # Feature Engineering 
     df['volume'] = df['x'] * df['y'] * df['z']
     df['volume'] = df['volume'].replace(0, 0.01)
     df['table_depth_ratio'] = df['table'] / df['depth']

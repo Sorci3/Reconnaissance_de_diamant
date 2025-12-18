@@ -49,3 +49,36 @@ def torch_regression_metrics(
             'R2 Score': round(r2_score(y_true, y_pred), 4)
         })
     return pd.DataFrame(results)
+
+
+def tensorflow_regression_metrics(Y_true, Y_pred, dataset_name):
+    """Calcule et formate les métriques pour le rapport."""
+    
+    # Séparation des cibles pour les calculs
+    y_true_price = Y_true[:, 0]
+    y_pred_price = Y_pred[:, 0]
+    
+    y_true_carat = Y_true[:, 1]
+    y_pred_carat = Y_pred[:, 1]
+    
+    results = []
+    
+    # Métriques pour le prix
+    results.append({
+        'Dataset': dataset_name,
+        'Cible': 'Price ($)',
+        'RMSE': np.sqrt(mean_squared_error(y_true_price, y_pred_price)),
+        'MAE': mean_absolute_error(y_true_price, y_pred_price),
+        'R2 Score': r2_score(y_true_price, y_pred_price)
+    })
+    
+    # Métriques pour le carat
+    results.append({
+        'Dataset': dataset_name,
+        'Cible': 'Carat (ct)',
+        'RMSE': np.sqrt(mean_squared_error(y_true_carat, y_pred_carat)),
+        'MAE': mean_absolute_error(y_true_carat, y_pred_carat),
+        'R2 Score': r2_score(y_true_carat, y_pred_carat)
+    })
+    
+    return pd.DataFrame(results)

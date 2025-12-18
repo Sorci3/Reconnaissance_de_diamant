@@ -6,6 +6,10 @@ import torch.optim as optim
 from torchsummary import summary
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, BatchNormalization, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 color_map = {'J': 0, 'I': 1, 'H': 2, 'G': 3, 'F': 4, 'E': 5, 'D': 6}
 clarity_map = {'I1': 0, 'SI2': 1, 'SI1': 2, 'VS2': 3, 'VS1': 4, 'VVS2': 5, 'VVS1': 6, 'IF': 7}
@@ -205,4 +209,101 @@ def torch_regression_prediction(
 
 
 
+def train_tensorflow_regression(
+    dataframe,
+    feature_cols=None,
+    target_cols=None,
+    layer1=256,
+    layer2=128,
+    layer3=64,
+    dropout_rate=0.15,
+    learning_rate=0.001,
+    epochs=50,
+    batch_size=32
+):
+    
+    """
+    Entraîne un modèle TensorFlow/Keras pour la régression multiple (Prix & Carat).
+    """
+    
+    if feature_cols is None:
+        feature_cols = ['color', 'clarity', 'depth', 'table', 'x', 'y', 'z']
+    if target_cols is None:
+        target_cols = ['price', 'carat']
 
+    X = dataframe[feature_cols]
+    y = dataframe[target_cols]
+
+    #Separation des valeurs dans train et test
+    X_np = X.values.astype(np.float32)
+    y_np = y.values.astype(np.float32)
+
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_np, y_np, test_size=0.2, random_state=42
+    )
+
+    scaler_X = StandardScaler()
+    scaler_y = StandardScaler()
+
+    #Scaling des données
+    X_train = scaler_X.fit_transform(X_train)
+    y_train = scaler_y.fit_transform(y_train)
+    X_test = scaler_X.transform(X_test)
+    y_test = scaler_y.transform(y_test)
+
+    model = Sequential([
+        Dense(layer1, activation='relu', input_shape=(X_train.shape[1],)),
+        BatchNormalization(),
+        Dropout(dropout_rate),
+
+        Dense(layer2, activation='relu'),
+        BatchNormalization(),
+        Dropout(dropout_rate),
+
+        Dense(layer3, activation='relu'),
+        BatchNormalization(),
+        Dropout(dropout_rate),
+
+        Dense(len(target_cols), activation='linear')
+    ])
+
+    model.compile(
+        optimizer=Adam(learning_rate=learning_rate),
+        loss="mse",
+        metrics=["mae", "mse"]
+    )
+
+    early_stopping = EarlyStopping(
+        monitor="val_loss", 
+        patience=10, 
+        restore_best_weights=True
+    )
+
+    lr_scheduler = ReduceLROnPlateau(
+        monitor='val_loss', 
+        factor=0.5, 
+        patience=3, 
+        min_lr=1e-6, 
+        verbose=1
+    )
+
+    history = model.fit(
+        X_train, y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(X_test, y_test),
+        callbacks=[early_stopping, lr_scheduler],
+        verbose=1
+    )
+
+    data_artifacts = {
+        'X_train': X_train,
+        'X_test': X_test,
+        'y_train': y_train,
+        'y_test': y_test,    
+        'scaler_x': scaler_X,
+        'scaler_y': scaler_y
+    }
+
+    return model, history, data_artifacts
