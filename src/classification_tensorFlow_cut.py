@@ -9,7 +9,7 @@ import joblib
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import class_weight
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, precision_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
 
 from tensorflow.keras.models import Sequential
@@ -310,9 +310,13 @@ def charger_et_tester_modele_dt(nom_model, X_test, y_test):
     model = joblib.load(chemin)
     y_pred = model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred, average='weighted')
+    rec = recall_score(y_test, y_pred, average='weighted')
     
     print('=================================================')
     print(f'Résultats Decision Tree chargé : {nom_model}')
     print('=================================================')
-    print(f"Accuracy : {acc:.4f}")
+    print(f"Accuracy  : {acc:.4f}")
+    print(f"Precision : {prec:.4f}")
+    print(f"Recall    : {rec:.4f}")
     return 0
