@@ -55,9 +55,36 @@ if __name__ == "__main__":
     run_regression_training()
     run_sklearn_baseline()
     # Classification cut
+
+    ##Decision Tree
+    df = dp.preparation_dataset_50k()
+    X_train, X_test, y_train, y_test, _, _, _, _, _ = ctc.preparation_entrainement(df)
+    best_model = ctc.model_decision_tree_grid_search(X_train, y_train, X_test, y_test)
+    ctc.sauvegarder_modele_dt(best_model, "dtCutOptimized")
+
+    ##Tensorflow
     df = dp.preparation_dataset_50k()
     (X_train, X_test, y_train, y_test, 
      X_train_scaled, X_test_scaled, 
      y_train_cat, y_test_cat, scaler) = ctc.preparation_entrainement(df)
     model = ctc.model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled, y_train_cat, y_test_cat)
     ctc.sauvegarder_modele_tf(model, "tfCut", scaler)
+
+
+    # Classification Type
+
+    ##Decision Tree
+    df = dp.preparation_dataset_6k_Classification()
+    X_train, X_test, y_train, y_test, _, _, _, _, _ = ctc.preparation_entrainement(df)
+    best_model = ctc.model_decision_tree_grid_search(X_train, y_train, X_test, y_test)
+    ctc.sauvegarder_modele_dt(best_model, "dtTypeOptimized")
+
+    ##TensorFlow
+    df = dp.preparation_dataset_6k_Classification()
+    (X_train, X_test, y_train, y_test, 
+     X_train_scaled, X_test_scaled, 
+     y_train_cat, y_test_cat, scaler) = ctt.preparation_entrainement(df)
+    model = ctc.model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled, y_train_cat, y_test_cat)
+    ctc.sauvegarder_modele_tf(model, "tfType", scaler)
+
+    

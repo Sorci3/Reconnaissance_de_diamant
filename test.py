@@ -120,15 +120,41 @@ if __name__ == "__main__":
     evaluate_sklearn_model()
     
     # Classification Cut
-    nom_du_modele = "tfCut"
-    
+
+    ##Decision tree
+    nom_modele = "dtCutOptimized"
     df = dp.preparation_dataset_50k()
     X = df.drop(columns=['cut'])
     y = df['cut']
+    ctc.charger_et_tester_modele_dt(nom_modele, X, y)
 
+    ##Tensorflow
+    nom_du_modele = "tfCut"
+    df = dp.preparation_dataset_50k()
+    X = df.drop(columns=['cut'])
+    y = df['cut']
     scaler = joblib.load(f"model/{nom_du_modele}_scaler.pkl")
-
     X_test_scaled = scaler.transform(X) 
     y_test_cat = to_categorical(y, num_classes=5)
+    ctc.charger_et_tester_modele_tf(nom_du_modele, X_test_scaled, y_test_cat)
 
+
+
+    # Classification Type
+
+    ##Decision tree
+    nom_modele = "dtTypeOptimized"
+    df = dp.preparation_dataset_6k_Classification()
+    X = df.drop(columns=['Type', 'Price'])
+    y = df['Type']
+    ctc.charger_et_tester_modele_dt(nom_modele, X, y)
+
+    ##Tensorflow
+    nom_du_modele = "tfType"
+    df = dp.preparation_dataset_6k_Classification()
+    X = df.drop(columns=['Type', 'Price'])
+    y = df['Type']
+    scaler = joblib.load(f"model/{nom_du_modele}_scaler.pkl")
+    X_test_scaled = scaler.transform(X) 
+    y_test_cat = to_categorical(y, num_classes=5)
     ctc.charger_et_tester_modele_tf(nom_du_modele, X_test_scaled, y_test_cat)

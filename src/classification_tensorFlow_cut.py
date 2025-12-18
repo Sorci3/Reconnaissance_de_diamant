@@ -92,7 +92,7 @@ def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
     Modèle du decision tree optimisé avec Grid Search
 
     Paramètre d'entré : X_train, y_train, X_test, y_test
-    Paramètre de sortie : Aucun
+    Paramètre de sortie : Le meilleur modèle trouvé
     Métriques : Accuracy
 
     IMPORTANT : Ce modèle étant un decision tree il n'a pas besoin des
@@ -112,23 +112,24 @@ def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
         param_grid=param_grid,
         cv=5,
         n_jobs=-1,
-        verbose=1,
+        verbose=2,
         scoring='accuracy'
     )
 
     grid_search.fit(X_train, y_train)
     best_tree = grid_search.best_estimator_
-    y_pred_best = best_tree.predict(X_test)
-    accuracy_best = accuracy_score(y_test, y_pred_best)
 
-    print('=================================================')
-    print('Modèle Decision Tree avec Grid Search')
-    print('=================================================')
-    print(f'Meilleurs paramètres : {grid_search.best_params_}')
-    print(f'Meilleur score de validation (cv) : {grid_search.best_score_:.4f}')
-    print(f'Accuracy Test (Optimisé) : {accuracy_best:.4f}')
+    # y_pred_best = best_tree.predict(X_test)
+    # accuracy_best = accuracy_score(y_test, y_pred_best)
 
-    return 0
+    # print('=================================================')
+    # print('Modèle Decision Tree avec Grid Search')
+    # print('=================================================')
+    # print(f'Meilleurs paramètres : {grid_search.best_params_}')
+    # print(f'Meilleur score de validation (cv) : {grid_search.best_score_:.4f}')
+    # print(f'Accuracy Test (Optimisé) : {accuracy_best:.4f}')
+
+    return best_tree
 
 
 #####################################################
@@ -241,6 +242,10 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
 #           Sauvegarde et Chargement
 #####################################################
 
+
+
+#Tensorflow
+
 def sauvegarder_modele_tf(model, nom_model, scaler):
     """
     Sauvegarde le modèle TensorFlow au format .keras
@@ -278,4 +283,36 @@ def charger_et_tester_modele_tf(nom_model, X_test_scaled, y_test_cat):
     print(f"Test Precision: {prec:.4f}")
     print(f"Test Recall   : {rec:.4f}")
     
-    return model
+    return 0
+
+
+# Decision Tree
+def sauvegarder_modele_dt(model, nom_model):
+    """ Sauvegarde un modèle Scikit-Learn au format .pkl """
+    dossier = 'model'
+    if not os.path.exists(dossier):
+        os.makedirs(dossier)
+    
+    chemin = os.path.join(dossier, f'{nom_model}.pkl')
+    joblib.dump(model, chemin)
+    print(f" Modèle Decision Tree sauvegardé : {chemin}")
+
+
+
+def charger_et_tester_modele_dt(nom_model, X_test, y_test):
+    """ Charge le modèle .pkl et le teste """
+    chemin = f'model/{nom_model}.pkl'
+    
+    if not os.path.exists(chemin):
+        print(f" Erreur : {chemin} introuvable.")
+        return
+    
+    model = joblib.load(chemin)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    
+    print('=================================================')
+    print(f'Résultats Decision Tree chargé : {nom_model}')
+    print('=================================================')
+    print(f"Accuracy : {acc:.4f}")
+    return 0

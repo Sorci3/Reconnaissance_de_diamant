@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+import os
+import joblib
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
@@ -46,7 +48,7 @@ def preparation_entrainement(df):
     y_test_cat = to_categorical(y_test, num_classes=3)
 
     return (X_train, X_test, y_train, y_test, X_train_scaled,
-            X_test_scaled, y_train_cat, y_test_cat)
+            X_test_scaled, y_train_cat, y_test_cat, scaler)
 
 
 #####################################################
@@ -110,7 +112,7 @@ def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
         param_grid=param_grid,
         cv=5,
         n_jobs=-1,
-        verbose=1,
+        verbose=2,
         scoring='accuracy'
     )
 
@@ -139,7 +141,7 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
     Modèle Tensorflow
     Paramètre d'entré' : y_train, y_test, X_train_scaled, X_test_scaled,
                          y_train_cat, y_test_cat
-    Paramètre de sortie : Aucun
+    Paramètre de sortie : Le model
 
     Fonctionnement
     - Définition du modèle
@@ -199,36 +201,115 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
     )
 
     # Affichage des metrics
-    loss, acc, prec, rec = model.evaluate(
-        X_test_scaled, y_test_cat, verbose=0
-    )
-    y_pred_probs = model.predict(X_test_scaled)
-    y_pred_classes = np.argmax(y_pred_probs, axis=1)
-    y_true_classes = y_test
+    # loss, acc, prec, rec = model.evaluate(
+    #     X_test_scaled, y_test_cat, verbose=0
+    # )
+    # y_pred_probs = model.predict(X_test_scaled)
+    # y_pred_classes = np.argmax(y_pred_probs, axis=1)
+    # y_true_classes = y_test
 
-    print('=================================================')
-    print('Modèle TensorFlow')
-    print('=================================================')
+    # print('=================================================')
+    # print('Modèle TensorFlow')
+    # print('=================================================')
 
+    # print(f"Test Accuracy : {acc:.4f}")
+    # print(f"Test Precision: {prec:.4f}")
+    # print(f"Test Recall   : {rec:.4f}")
+
+    # # Courbe d'apprentissage
+    # plt.plot(history.history['loss'], label='Train Loss')
+    # plt.plot(history.history['val_loss'], label='Val Loss')
+    # plt.legend()
+    # plt.title("Courbes d'apprentissage")
+    # plt.show()
+
+    # # Matrice de confusion
+    # plt.figure(figsize=(10, 8))
+    # cm = confusion_matrix(y_true_classes, y_pred_classes, normalize='true')
+    # correct_labels = ['GIA Lab-Grown', 'GIA', 'IGI Lab-Grown']
+    # disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+    #                               display_labels=correct_labels)
+    # disp.plot(cmap='Blues', values_format='.2%')
+    # plt.title("Matrice de Confusion Normalisée (Variable Cible: Type)")
+    # plt.show()
+
+    return 
+
+
+#####################################################
+#           Sauvegarde et Chargement
+#####################################################
+
+
+#Tensorflow
+
+def sauvegarder_modele_tf(model, nom_model, scaler):
+    """
+    Sauvegarde le modèle TensorFlow au format .keras
+    """
+    dossier = 'model'
+    if not os.path.exists(dossier):
+        os.makedirs(dossier)
+        
+    chemin_complet = os.path.join(dossier, f'{nom_model}.keras')
+    model.save(chemin_complet)
+    joblib.dump(scaler, os.path.join(dossier, f'{nom_model}_scaler.pkl'))
+    print(f' Modèle et Scaler sauvegardés dans {dossier}')
+
+def charger_et_tester_modele_tf(nom_model, X_test_scaled, y_test_cat):
+    """
+    Charge un modèle sauvegardé et effectue une évaluation sur les données de test
+    """
+    chemin_complet = f'model/{nom_model}.keras'
+    
+    if not os.path.exists(chemin_complet):
+        print(f" Erreur : Le fichier {chemin_complet} n'existe pas.")
+        return None
+
+    # Chargement du modèle
+    model = tf.keras.models.load_model(chemin_complet)
+    print(f" Modèle {nom_model} chargé avec succès.")
+
+    # Évaluation
+    loss, acc, prec, rec = model.evaluate(X_test_scaled, y_test_cat, verbose=0)
+    
+    print('=================================================')
+    print(f'Résultats du modèle chargé : {nom_model}')
+    print('=================================================')
     print(f"Test Accuracy : {acc:.4f}")
     print(f"Test Precision: {prec:.4f}")
     print(f"Test Recall   : {rec:.4f}")
+    
+    return 0
 
-    # Courbe d'apprentissage
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Val Loss')
-    plt.legend()
-    plt.title("Courbes d'apprentissage")
-    plt.show()
 
-    # Matrice de confusion
-    plt.figure(figsize=(10, 8))
-    cm = confusion_matrix(y_true_classes, y_pred_classes, normalize='true')
-    correct_labels = ['GIA Lab-Grown', 'GIA', 'IGI Lab-Grown']
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-                                  display_labels=correct_labels)
-    disp.plot(cmap='Blues', values_format='.2%')
-    plt.title("Matrice de Confusion Normalisée (Variable Cible: Type)")
-    plt.show()
 
+# Decision Tree
+def sauvegarder_modele_dt(model, nom_model):
+    """ Sauvegarde un modèle Scikit-Learn au format .pkl """
+    dossier = 'model'
+    if not os.path.exists(dossier):
+        os.makedirs(dossier)
+    
+    chemin = os.path.join(dossier, f'{nom_model}.pkl')
+    joblib.dump(model, chemin)
+    print(f" Modèle Decision Tree sauvegardé : {chemin}")
+
+
+def charger_et_tester_modele_dt(nom_model, X_test, y_test):
+    """ Charge le modèle .pkl et le teste """
+    chemin = f'model/{nom_model}.pkl'
+    
+    if not os.path.exists(chemin):
+        print(f" Erreur : {chemin} introuvable.")
+        return
+    
+    model = joblib.load(chemin)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    
+    print('=================================================')
+    print(f'Résultats Decision Tree chargé : {nom_model}')
+    print('=================================================')
+    print(f"Accuracy : {acc:.4f}")
     return 0
