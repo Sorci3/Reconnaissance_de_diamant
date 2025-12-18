@@ -338,7 +338,7 @@ def train_sklearn_pipeline(df):
 
     #On définit les colonnes non numériques
     categorical_features = ['cut', 'color', 'clarity']
-    # Les autres sont numériques (depth, table, x, y, z...)
+    #Les autres colonnes sont numériques
     numerical_features = [c for c in feature_cols if c not in categorical_features]
 
     preprocessor = ColumnTransformer(

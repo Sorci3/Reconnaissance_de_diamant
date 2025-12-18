@@ -3,6 +3,7 @@ warnings.filterwarnings("ignore")
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import src.classification_tensorFlow_cut as ctc
+import src.classification_tensorFlow_type as ctt
 import src.data_prep as dp
 import joblib
 from tensorflow.keras.utils import to_categorical
@@ -21,10 +22,6 @@ def evaluate_tensorflow_model():
     
     path_model = "model/tf_regression_model.keras"
     path_artifacts = "model/tf_artifacts.pkl"
-    
-    if not os.path.exists(path_model):
-        print("Erreur : Modèle non trouvé. Lancez train.py d'abord.")
-        return
 
     model = tf.keras.models.load_model(path_model)
     
@@ -58,16 +55,15 @@ def evaluate_torch_model():
     path_artifacts = "model/torch_artifacts.pkl"
 
 
-    # 1. Chargement du modèle complet
+    #Chargement du modèle
     model = torch.load(path_model, weights_only=False)
     model.eval()
     
-    # 2. Chargement des artifacts (X_test, scalers...)
+    #Chargement des artifacts (X_test, scalers...)
     with open(path_artifacts, "rb") as f:
         artifacts = pickle.load(f)
     
-    # 3. Calcul des métriques via metrics.py
-    # Note: artifacts['X_test_tensor'] contient déjà les données scalées de test
+    #Fonction permettant de calculer nos métriques
     df_metrics = src.metrics.torch_regression_metrics(
         model=model,
         X_tensor=artifacts['X_test_tensor'],
@@ -78,7 +74,7 @@ def evaluate_torch_model():
     
     print(df_metrics.to_string(index=False))
     
-    # Exemple de prédiction unitaire (Optionnel)
+    # Exemple de prédiction unitaire
     print("\nTest de prédiction unitaire :")
     prix, carat = src.regression_models.torch_regression_prediction(
         model, artifacts['scaler_x'], artifacts['scaler_y'],
@@ -118,7 +114,7 @@ if __name__ == "__main__":
     evaluate_tensorflow_model()
     evaluate_torch_model()
     evaluate_sklearn_model()
-    
+
     # Classification Cut
 
     ##Decision tree
@@ -147,7 +143,7 @@ if __name__ == "__main__":
     df = dp.preparation_dataset_6k_Classification()
     X = df.drop(columns=['Type', 'Price'])
     y = df['Type']
-    ctc.charger_et_tester_modele_dt(nom_modele, X, y)
+    ctt.charger_et_tester_modele_dt(nom_modele, X, y)
 
     ##Tensorflow
     nom_du_modele = "tfType"
@@ -156,5 +152,5 @@ if __name__ == "__main__":
     y = df['Type']
     scaler = joblib.load(f"model/{nom_du_modele}_scaler.pkl")
     X_test_scaled = scaler.transform(X) 
-    y_test_cat = to_categorical(y, num_classes=5)
-    ctc.charger_et_tester_modele_tf(nom_du_modele, X_test_scaled, y_test_cat)
+    y_test_cat = to_categorical(y, num_classes=3)
+    ctt.charger_et_tester_modele_tf(nom_du_modele, X_test_scaled, y_test_cat)

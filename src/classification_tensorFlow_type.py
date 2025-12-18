@@ -118,17 +118,8 @@ def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
 
     grid_search.fit(X_train, y_train)
     best_tree = grid_search.best_estimator_
-    y_pred_best = best_tree.predict(X_test)
-    accuracy_best = accuracy_score(y_test, y_pred_best)
 
-    print('=================================================')
-    print('Modèle Decision Tree avec Grid Search')
-    print('=================================================')
-    print(f'Meilleurs paramètres : {grid_search.best_params_}')
-    print(f'Meilleur score de validation (cv) : {grid_search.best_score_:.4f}')
-    print(f'Accuracy Test (Optimisé) : {accuracy_best:.4f}')
-
-    return 0
+    return best_tree
 
 
 #####################################################
@@ -233,7 +224,7 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
     # plt.title("Matrice de Confusion Normalisée (Variable Cible: Type)")
     # plt.show()
 
-    return 
+    return model
 
 
 #####################################################
@@ -250,7 +241,7 @@ def sauvegarder_modele_tf(model, nom_model, scaler):
     dossier = 'model'
     if not os.path.exists(dossier):
         os.makedirs(dossier)
-        
+
     chemin_complet = os.path.join(dossier, f'{nom_model}.keras')
     model.save(chemin_complet)
     joblib.dump(scaler, os.path.join(dossier, f'{nom_model}_scaler.pkl'))
