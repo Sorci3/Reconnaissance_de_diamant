@@ -1,11 +1,3 @@
-# Deep Learning
-
-### Contributeurs
-Louis Maillet
-Herbreteau Mathis
-Le Pottier Mathias
-Pasquier Samuel
-
 ### Contexte
 Nous sommes des bijoutiers et nous souhaitons pouvoir garantir l'authenticité des diamants apporté par nos clients. Nous souhaitons également les racheters au prix juste. Pour ce faire nous avons développé un système permettant de prédire la coupe, le type, le prix et le carat pour les diamants n'ayant jamais été authentifiés.
 
