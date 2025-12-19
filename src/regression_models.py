@@ -244,10 +244,13 @@ def train_tensorflow_regression(
     X_np = X.values.astype(np.float32)
     y_np = y.values.astype(np.float32)
 
-    #
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_np, y_np, test_size=0.2, random_state=42
-    )
+    X_temp, X_test, y_temp, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+        )
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_temp, y_temp, test_size=0.25, random_state=42
+        )
 
     scaler_X = StandardScaler()
     scaler_y = StandardScaler()
@@ -255,8 +258,10 @@ def train_tensorflow_regression(
     #Scaling des données
     X_train = scaler_X.fit_transform(X_train)
     y_train = scaler_y.fit_transform(y_train)
+    X_val = scaler_X.fit_transform(X_val)
     X_test = scaler_X.transform(X_test)
     y_test = scaler_y.transform(y_test)
+    y_val = scaler_y.fit_transform(y_val)
 
     #Définition de l'architecture du modèle
     model = Sequential([
@@ -301,7 +306,7 @@ def train_tensorflow_regression(
         X_train, y_train,
         epochs=epochs,
         batch_size=batch_size,
-        validation_data=(X_test, y_test),
+        validation_data=(X_val, y_val),
         callbacks=[early_stopping, lr_scheduler],
         verbose=1
     )
