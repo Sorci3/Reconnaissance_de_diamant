@@ -69,9 +69,13 @@ def train_torch_regression(
     X_np = X.values.astype(np.float32)
     y_np = y.values.astype(np.float32)
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_temp, X_test, y_temp, y_test = train_test_split(
         X_np, y_np, test_size=0.2, random_state=42
-    )
+        )
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_temp, y_temp, test_size=0.25, random_state=42
+        )
 
     scaler_X = StandardScaler()
     scaler_y = StandardScaler()
@@ -79,6 +83,8 @@ def train_torch_regression(
     #Scaling des données
     X_train = scaler_X.fit_transform(X_train)
     y_train = scaler_y.fit_transform(y_train)
+    X_val = scaler_X.fit_transform(X_val)
+    y_val = scaler_y.fit_transform(y_val)
     X_test = scaler_X.transform(X_test)
     y_test = scaler_y.transform(y_test)
 
@@ -89,9 +95,9 @@ def train_torch_regression(
     #Création des Tensors pour le modèle
     X_train_tensor = torch.tensor(X_train)
     y_train_tensor = torch.tensor(y_train)
+    X_val_tensor = torch.tensor(X_val)
+    y_val_tensor = torch.tensor(y_val)
     X_test_tensor = torch.tensor(X_test)
-    y_test_tensor = torch.tensor(y_test)
-
 
     model = nn.Sequential(
         nn.Linear(input_dimension, layer1),
@@ -133,8 +139,8 @@ def train_torch_regression(
         # Évaluation du modèle avec le test
         model.eval()
         with torch.no_grad():
-            test_outputs = model(X_test_tensor)
-            test_loss = criterion(test_outputs, y_test_tensor)
+            test_outputs = model(X_val_tensor)
+            test_loss = criterion(test_outputs, y_val_tensor)
 
         # Update du scheduler
         scheduler.step(test_loss)
@@ -239,10 +245,6 @@ def train_tensorflow_regression(
 
     X = dataframe[feature_cols]
     y = dataframe[target_cols]
-
-    #Separation des valeurs dans train et test
-    X_np = X.values.astype(np.float32)
-    y_np = y.values.astype(np.float32)
 
     X_temp, X_test, y_temp, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
