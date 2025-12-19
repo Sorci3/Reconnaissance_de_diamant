@@ -36,19 +36,25 @@ def preparation_entrainement(df):
     X = df.drop(columns=[target, "Price"])
     y = df[target]
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train_val, X_test, y_train_val, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_val, y_train_val, test_size=0.25, random_state=42, stratify=y_train_val
     )
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
+    X_val_scaled = scaler.transform(X_val) 
     X_test_scaled = scaler.transform(X_test)
 
     y_train_cat = to_categorical(y_train, num_classes=3)
+    y_val_cat = to_categorical(y_val, num_classes=3)
     y_test_cat = to_categorical(y_test, num_classes=3)
 
-    return (X_train, X_test, y_train, y_test, X_train_scaled,
-            X_test_scaled, y_train_cat, y_test_cat, scaler)
+    return (X_train, X_val, X_test, y_train, y_val, y_test, 
+            X_train_scaled, X_val_scaled, X_test_scaled, 
+            y_train_cat, y_val_cat, y_test_cat, scaler)
 
 
 #####################################################
@@ -126,8 +132,7 @@ def model_decision_tree_grid_search(X_train, y_train, X_test, y_test):
 #           Modèle TensorFlow
 #####################################################
 
-def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
-                     y_train_cat, y_test_cat):
+def model_tensorFlow(y_train, X_train_scaled, X_val_scaled, y_train_cat, y_val_cat):
     """
     Modèle Tensorflow
     Paramètre d'entré' : y_train, y_test, X_train_scaled, X_test_scaled,
@@ -168,61 +173,22 @@ def model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled,
 
     # Entrainement
     classes_uniques = np.unique(y_train)
-    poids = class_weight.compute_class_weight(
-        class_weight='balanced',
-        classes=classes_uniques,
-        y=y_train
-    )
+    poids = class_weight.compute_class_weight('balanced', classes=classes_uniques, y=y_train)
     poids_dict = dict(zip(classes_uniques, poids))
-
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10,
-                                   restore_best_weights=True)
-    lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                     patience=3, min_lr=1e-6, verbose=1)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
 
     history = model.fit(
         X_train_scaled,
         y_train_cat,
         epochs=50,
         batch_size=64,
-        validation_data=(X_test_scaled, y_test_cat),
+        validation_data=(X_val_scaled, y_val_cat), 
         callbacks=[early_stopping, lr_scheduler],
         class_weight=poids_dict,
         verbose=2
     )
 
-    # Affichage des metrics
-    # loss, acc, prec, rec = model.evaluate(
-    #     X_test_scaled, y_test_cat, verbose=0
-    # )
-    # y_pred_probs = model.predict(X_test_scaled)
-    # y_pred_classes = np.argmax(y_pred_probs, axis=1)
-    # y_true_classes = y_test
-
-    # print('=================================================')
-    # print('Modèle TensorFlow')
-    # print('=================================================')
-
-    # print(f"Test Accuracy : {acc:.4f}")
-    # print(f"Test Precision: {prec:.4f}")
-    # print(f"Test Recall   : {rec:.4f}")
-
-    # # Courbe d'apprentissage
-    # plt.plot(history.history['loss'], label='Train Loss')
-    # plt.plot(history.history['val_loss'], label='Val Loss')
-    # plt.legend()
-    # plt.title("Courbes d'apprentissage")
-    # plt.show()
-
-    # # Matrice de confusion
-    # plt.figure(figsize=(10, 8))
-    # cm = confusion_matrix(y_true_classes, y_pred_classes, normalize='true')
-    # correct_labels = ['GIA Lab-Grown', 'GIA', 'IGI Lab-Grown']
-    # disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-    #                               display_labels=correct_labels)
-    # disp.plot(cmap='Blues', values_format='.2%')
-    # plt.title("Matrice de Confusion Normalisée (Variable Cible: Type)")
-    # plt.show()
 
     return model
 

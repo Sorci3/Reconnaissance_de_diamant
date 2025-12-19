@@ -62,16 +62,16 @@ if __name__ == "__main__":
 
     ##Decision Tree
     df = dp.preparation_dataset_50k()
-    X_train, X_test, y_train, y_test, _, _, _, _, _ = ctc.preparation_entrainement(df)
+    X_train, _, X_test, y_train, _, y_test, _, _, _, _, _, _, _ = ctc.preparation_entrainement(df)
     best_model = ctc.model_decision_tree_grid_search(X_train, y_train, X_test, y_test)
     ctc.sauvegarder_modele_dt(best_model, "dtCutOptimized")
 
     ##Tensorflow
     df = dp.preparation_dataset_50k()
-    (X_train, X_test, y_train, y_test, 
-     X_train_scaled, X_test_scaled, 
-     y_train_cat, y_test_cat, scaler) = ctc.preparation_entrainement(df)
-    model = ctc.model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled, y_train_cat, y_test_cat)
+    (X_train, X_val, X_test, y_train, y_val, y_test, 
+    X_train_scaled, X_val_scaled, X_test_scaled, 
+    y_train_cat, y_val_cat, y_test_cat, scaler) = ctc.preparation_entrainement(df)
+    model = ctc.model_tensorFlow(y_train, X_train_scaled, X_val_scaled, y_train_cat, y_val_cat)
     ctc.sauvegarder_modele_tf(model, "tfCut", scaler)
 
 
@@ -79,16 +79,16 @@ if __name__ == "__main__":
 
     ##Decision Tree
     df = dp.preparation_dataset_6k_Classification()
-    X_train, X_test, y_train, y_test, _, _, _, _, _ = ctt.preparation_entrainement(df)
+    X_train, _, X_test, y_train, _, y_test, _, _, _, _, _, _, _ = ctt.preparation_entrainement(df)
     best_model = ctt.model_decision_tree_grid_search(X_train, y_train, X_test, y_test)
     ctt.sauvegarder_modele_dt(best_model, "dtTypeOptimized")
 
     ##TensorFlow
     df = dp.preparation_dataset_6k_Classification()
-    (X_train, X_test, y_train, y_test, 
-     X_train_scaled, X_test_scaled, 
-     y_train_cat, y_test_cat, scaler) = ctt.preparation_entrainement(df)
-    model = ctt.model_tensorFlow(y_train, y_test, X_train_scaled, X_test_scaled, y_train_cat, y_test_cat)
+    (X_train, X_val, X_test, y_train, y_val, y_test, 
+    X_train_scaled, X_val_scaled, X_test_scaled, 
+    y_train_cat, y_val_cat, y_test_cat, scaler) = ctt.preparation_entrainement(df)
+    model = ctt.model_tensorFlow(y_train, X_train_scaled, X_val_scaled, y_train_cat, y_val_cat)
     ctt.sauvegarder_modele_tf(model, "tfType", scaler)
 
     
